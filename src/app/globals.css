@@ -89,6 +89,6 @@ legend {
 
 @layer utilities {
   .app-container {
-    @apply mobile:container mx-auto px-2 mobile:px-0 mobile-laptop:max-w-full mobile-laptop:px-2;
+    @apply mobile:container mx-auto px-2 mobile:px-0 mobile-laptop:max-w-full mobile-laptop:px-2 ;
   }
 }

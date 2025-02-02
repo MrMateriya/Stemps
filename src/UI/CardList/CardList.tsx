@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useLayoutEffect, useRef} from 'react';
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {Card} from "@/UI/types";
 import {animate} from "framer-motion";
 import {Icon} from "@/UI";
@@ -21,8 +21,8 @@ const CardList = ({
   let isPlayingAnimation = useRef<boolean>(false)
 
   let gap = 16;
-  let widthCard: number = 358;
-  if (isBrowser && window.innerWidth >= Number(process.env.NEXT_PUBLIC_SCREEN_LG)) widthCard = 412;
+  const [widthCard, setWidthCard ] = useState<number>(358)
+  const { width: windowWidth } = useWindowSize()
   const alignmentCardThreshold: number = widthCard / 2;
 
   let startScrollLeft: number = 0;
@@ -105,8 +105,17 @@ const CardList = ({
     const controls = Animating(currentCardIndex)
     return () => controls?.stop()
   }, [currentCardIndex]);
+  useLayoutEffect(() => {
+    if (window.innerWidth >= Number(process.env.NEXT_PUBLIC_SCREEN_LG)) {
+      console.log(window.innerWidth, Number(process.env.NEXT_PUBLIC_SCREEN_LG))
+      setWidthCard(412)
+    } else {
+      setWidthCard(358)
+    }
+  }, [windowWidth]);
 
   console.log(widthCard)
+
   function Animating(index: number) {
     if (!list.current || isPlayingAnimation.current) return;
     isPlayingAnimation.current = true
