@@ -8,21 +8,21 @@ import {useWindowSize} from "@/hooks/useWindowSize";
 
 interface CardListProps extends React.HTMLAttributes<HTMLDivElement> {
   cards: Card[],
-  currentCardIndex: number,
+  startCardIndex: number,
   onChangeCard: (index: number) => void,
 }
 
 const CardList = ({
-                    cards, currentCardIndex = 0, className, onChangeCard,
+                    cards, startCardIndex = 0, className, onChangeCard,
                     ...props
                   }: CardListProps): React.JSX.Element => {
-  const isBrowser = typeof window !== 'undefined';
   const list = useRef<HTMLDivElement>(null)
   let isPlayingAnimation = useRef<boolean>(false)
+  const { width: windowWidth } = useWindowSize()
 
   let gap = 16;
   const [widthCard, setWidthCard ] = useState<number>(358)
-  const { width: windowWidth } = useWindowSize()
+
   const alignmentCardThreshold: number = widthCard / 2;
 
   let startScrollLeft: number = 0;
@@ -64,6 +64,7 @@ const CardList = ({
     const cardsOffsetLeft = []
 
     if (e.currentTarget.scrollLeft === fullScrollLeft) {
+      if (startCardIndex === cards.length - 1) return;
       if (cards.length === 0) {
         onChangeCard(0)
         return;
@@ -73,20 +74,26 @@ const CardList = ({
     }
 
     for (let i = 0; i < cards.length; i++) {
-      if (i === cards.length - 1 || i === 0) {
+      if (i === 0) {
         cardsOffsetLeft[i] = calculateScrollLeft(i)
         continue;
       }
       cardsOffsetLeft[i] = calculateScrollLeft(i) - alignmentCardThreshold
     }
+
     for (let i = 0; i < cardsOffsetLeft.length; i++) {
       if (e.currentTarget.scrollLeft >= cardsOffsetLeft[i] && e.currentTarget.scrollLeft < cardsOffsetLeft[i+1] && cardsOffsetLeft[i+1]) {
-        if (currentCardIndex === i) {
+        if (startCardIndex === i) {
           Animating(i)
           return;
         }
         onChangeCard(i);
-      } else if (e.currentTarget.scrollLeft > cardsOffsetLeft[i] && i === cardsOffsetLeft.length) {
+      } else if (e.currentTarget.scrollLeft > cardsOffsetLeft[i] && i === cardsOffsetLeft.length - 1) {
+        if (startCardIndex === i) {
+          Animating(i)
+          return;
+        }
+        console.log('nigger')
         onChangeCard(i);
       }
     }
@@ -101,23 +108,8 @@ const CardList = ({
     return (widthCard * slideIndex + gap * slideIndex);
   }
 
-  useEffect(() => {
-    const controls = Animating(currentCardIndex)
-    return () => controls?.stop()
-  }, [currentCardIndex]);
-  useLayoutEffect(() => {
-    if (window.innerWidth >= Number(process.env.NEXT_PUBLIC_SCREEN_LG)) {
-      console.log(window.innerWidth, Number(process.env.NEXT_PUBLIC_SCREEN_LG))
-      setWidthCard(412)
-    } else {
-      setWidthCard(358)
-    }
-  }, [windowWidth]);
-
-  console.log(widthCard)
-
   function Animating(index: number) {
-    if (!list.current || isPlayingAnimation.current) return;
+    if (!list.current) return;
     isPlayingAnimation.current = true
 
     const toScrollLeft = calculateScrollLeft(index)
@@ -135,6 +127,20 @@ const CardList = ({
     })
   }
 
+  useEffect(() => {
+    const controls = Animating(startCardIndex)
+    return () => controls?.stop()
+  }, [startCardIndex]);
+
+  useLayoutEffect(() => {
+    if (!windowWidth) return;
+    if (windowWidth >= Number(process.env.NEXT_PUBLIC_SCREEN_LG)) {
+      setWidthCard(412)
+    } else {
+      setWidthCard(358)
+    }
+  }, [windowWidth]);
+
   return (
     <div ref={list}
          onTouchMove={handleScrolling}
@@ -150,8 +156,7 @@ const CardList = ({
       {cards.map((card, index) => {
         return (
           <div key={card.id}
-               className={["relative flex flex-col justify-between p-4 bg-light-gray rounded-lg min-h-[212px] min-w-fit mobile:min-w-[358px] mobile:flex-grow lg:p-6 lg:min-w-[412px] lg:min-h-[256px]", card.classNames?.card].join(" ")}
-               style={{width: widthCard}}>
+               className={["relative flex flex-col justify-between p-4 bg-light-gray rounded-lg min-h-[212px] min-w-fit mobile:min-w-[358px] mobile:flex-grow lg:p-6 lg:min-w-[412px] lg:min-h-[256px]", card.classNames?.card].join(" ")}>
             <div className={["flex items-center justify-start gap-6 lg:flex-col lg:items-start lg:justify-between lg:h-full", card.classNames?.cardInner].join(" ")}>
               <Icon key={card.icon.iconName}
                     className={["flex-shrink-0 lg:w-20 lg:h-20", card.classNames?.icon].join(" ")}
@@ -159,7 +164,7 @@ const CardList = ({
                     iconName={card.icon.iconName}
                     width={card.icon.iconWidth}
                     height={card.icon.iconHeight}/>
-              <p className={["text-2xl text-bl2 w-fit leading-7", card.classNames?.title].join(" ")}>
+              <p className={["text-2xl text-bl2 w-fit leading-7 lg:text-[32px]", card.classNames?.title].join(" ")}>
                 {card.title}
               </p>
             </div>

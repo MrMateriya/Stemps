@@ -12,7 +12,7 @@ export default {
     screens: {
       "mobile": "358px",
       "mobile-laptop": "391px",
-      "desktop": "1696px",
+      "desktop": "1728px",
       // "sm": "640px",
       // "md": "768px",
       "lg": "1024px",
