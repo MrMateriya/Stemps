@@ -8,8 +8,8 @@ import {useWindowSize} from "@/hooks/useWindowSize";
 
 interface CardListProps extends React.HTMLAttributes<HTMLDivElement> {
   cards: Card[],
-  startCardIndex: number,
-  onChangeCard: (index: number) => void,
+  startCardIndex?: number,
+  onChangeCard?: (index: number) => void,
 }
 
 const CardList = ({
@@ -22,6 +22,7 @@ const CardList = ({
 
   let gap = 16;
   const [widthCard, setWidthCard ] = useState<number>(358)
+  const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
   const alignmentCardThreshold: number = widthCard / 2;
 
@@ -64,12 +65,19 @@ const CardList = ({
     const cardsOffsetLeft = []
 
     if (e.currentTarget.scrollLeft === fullScrollLeft) {
-      if (startCardIndex === cards.length - 1) return;
       if (cards.length === 0) {
-        onChangeCard(0)
+        if (onChangeCard) onChangeCard(0)
+        Animating(0)
+        setCurrentCardIndex(0)
         return;
       }
-      onChangeCard(cards.length - 1);
+      if (currentCardIndex === cards.length - 1) {
+        Animating(cards.length - 1)
+        return;
+      }
+      if (onChangeCard) onChangeCard(cards.length - 1);
+      Animating(cards.length - 1)
+      setCurrentCardIndex(cards.length - 1)
       return;
     }
 
@@ -83,18 +91,21 @@ const CardList = ({
 
     for (let i = 0; i < cardsOffsetLeft.length; i++) {
       if (e.currentTarget.scrollLeft >= cardsOffsetLeft[i] && e.currentTarget.scrollLeft < cardsOffsetLeft[i+1] && cardsOffsetLeft[i+1]) {
-        if (startCardIndex === i) {
+        if (currentCardIndex === i) {
           Animating(i)
           return;
         }
-        onChangeCard(i);
+        if (onChangeCard) onChangeCard(i);
+        Animating(i)
+        setCurrentCardIndex(i)
       } else if (e.currentTarget.scrollLeft > cardsOffsetLeft[i] && i === cardsOffsetLeft.length - 1) {
-        if (startCardIndex === i) {
+        if (currentCardIndex === i) {
           Animating(i)
           return;
         }
-        console.log('nigger')
-        onChangeCard(i);
+        if (onChangeCard) onChangeCard(i);
+        Animating(i)
+        setCurrentCardIndex(i)
       }
     }
   }
@@ -112,7 +123,12 @@ const CardList = ({
     if (!list.current) return;
     isPlayingAnimation.current = true
 
-    const toScrollLeft = calculateScrollLeft(index)
+    let toScrollLeft = calculateScrollLeft(index)
+    const fullScrollLeft = list.current.scrollWidth - list.current.clientWidth
+
+    if (toScrollLeft >= fullScrollLeft) {
+      toScrollLeft = fullScrollLeft
+    }
 
     return animate(list.current.scrollLeft, toScrollLeft, {
       ease: "easeInOut",
@@ -129,6 +145,10 @@ const CardList = ({
 
   useEffect(() => {
     const controls = Animating(startCardIndex)
+    if (currentCardIndex !== startCardIndex) {
+      setCurrentCardIndex(startCardIndex)
+    }
+
     return () => controls?.stop()
   }, [startCardIndex]);
 

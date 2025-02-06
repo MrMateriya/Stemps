@@ -1,18 +1,21 @@
 "use client";
-import React, {MouseEvent, useEffect, useMemo, useRef, useState} from 'react';
+
+import React, {MouseEvent, useEffect, useRef, useState} from 'react';
 import {useAnimate} from "framer-motion";
+import {ISequentialTaskQueue, SequentialTaskQueue} from "@/utils/SequentialTaskQueue";
 
 interface BulletsProps extends React.HTMLAttributes<HTMLDivElement> {
   amount?: number,
   startBulletIndex?: number,
   onChangeBullet?: (number: number) => void,
 }
+
 interface HTMLDivElementWithOffsetState extends HTMLDivElement {
   offsetLeftTemp: number,
 }
 
 const Bullets = ({
-                   amount = 0,
+                   amount = 1,
                    startBulletIndex = 0,
                    className,
                    onChangeBullet,
@@ -23,10 +26,10 @@ const Bullets = ({
   if (startBulletIndex < 0) throw new Error('currentBulletIndex must be greater than or equal to zero');
   if (startBulletIndex > amount - 1) throw new Error('currentBulletIndex must be in the range');
 
-  const [scope, animate] = useAnimate()
-  let isPlayingAnimation = useRef<boolean>(false)
   const backgroundDotRef = useRef<HTMLDivElementWithOffsetState>(null)
   const currentDotRef = useRef<HTMLDivElement>(null)
+  const queueAnimations = useRef<ISequentialTaskQueue>(new SequentialTaskQueue())
+  const [scope, animate] = useAnimate()
 
   const [currentBulletIndex, setCurrentBulletIndex] = useState<number>(0)
 
@@ -34,75 +37,74 @@ const Bullets = ({
   const gap = 8
 
   useEffect(() => {
-    const startAnimation = async () => {
-      // if (isPlayingAnimation.current) return; //прерывать?
-      if (currentBulletIndex === startBulletIndex) return;
-      console.log('start animation')
-      const startOffset = widthBlock * startBulletIndex + gap * startBulletIndex;
+    const startOffset = widthBlock * startBulletIndex + gap * startBulletIndex;
+
+    addAnimationQueue({offsetLeft: startOffset, clientWidth: 8})
+
+    if (currentBulletIndex !== startBulletIndex) {
       setCurrentBulletIndex(startBulletIndex)
-      console.log('start offset: ', startOffset);
-      await Animating({offsetLeft: startOffset, clientWidth: 8})
     }
-    startAnimation()
 
-    return () => {
-
-    }
   }, [startBulletIndex])
 
   async function handleClickDot(e: MouseEvent<HTMLDivElement>) {
     const bulletIndex = Number(e.currentTarget.attributes["0"].value)
-    if (isPlayingAnimation.current) return;
+
     if (currentBulletIndex === bulletIndex) return;
-    if (onChangeBullet) {
-      onChangeBullet(bulletIndex)
-    }
+    if (onChangeBullet) onChangeBullet(bulletIndex)
+
     setCurrentBulletIndex(bulletIndex)
-    await Animating(e.currentTarget)
+    addAnimationQueue(e.currentTarget)
   }
 
-  async function Animating(target: {offsetLeft: number, clientWidth: number}) {
-    isPlayingAnimation.current = true;
-    
-    const speedAnimation = 0
-    const speedEase = "easeInOut"
+  function addAnimationQueue(target: { offsetLeft: number, clientWidth: number }) {
+    if (backgroundDotRef.current === null || currentDotRef.current === null) return;
 
     const {offsetLeft: offsetLeftTarget, clientWidth: clientWidthTarget} = target
-    if (backgroundDotRef.current === null || currentDotRef.current === null) return
 
-    if (backgroundDotRef.current.offsetLeftTemp === undefined) backgroundDotRef.current.offsetLeftTemp = 0;
-    if (backgroundDotRef.current.offsetLeftTemp === offsetLeftTarget) return;
+    const countAnimations = queueAnimations.current.getLength()
+    const duration = countAnimations > 2 ? 0.5 : 1
+    const ease = "linear"
 
-    //animation logic
-    if (offsetLeftTarget > backgroundDotRef.current.offsetLeftTemp) {
-      await animate(backgroundDotRef.current, {
-        width: offsetLeftTarget - backgroundDotRef.current.offsetLeftTemp + clientWidthTarget,
-      }, {duration: speedAnimation, ease: speedEase})
-      await animate(currentDotRef.current, {
-        x: offsetLeftTarget
-      }, {duration: speedAnimation, ease: speedEase})
-      await animate(backgroundDotRef.current, {
-        width: clientWidthTarget,
-        x: offsetLeftTarget,
-      }, {duration: speedAnimation, ease: speedEase})
-    } else {
-      await animate(backgroundDotRef.current, {
-        width: backgroundDotRef.current.offsetLeftTemp + clientWidthTarget - offsetLeftTarget,
-        x: offsetLeftTarget,
-      }, {duration: speedAnimation, ease: speedEase})
-      await animate(currentDotRef.current, {
-        x: offsetLeftTarget
-      }, {duration: speedAnimation, ease: speedEase})
-      await animate(backgroundDotRef.current, {
-        width: clientWidthTarget,
-      }, {duration: speedAnimation, ease: speedEase})
+    // backward
+    if (((currentBulletIndex + 1) * widthBlock + gap * currentBulletIndex) >= offsetLeftTarget) {
+      queueAnimations.current.add(async () => {
+        if (backgroundDotRef.current === null || currentDotRef.current === null) return;
+
+        await animate([
+          [backgroundDotRef.current, {
+            width: backgroundDotRef.current.offsetLeft - offsetLeftTarget + clientWidthTarget,
+            left: offsetLeftTarget,
+          }],
+          [currentDotRef.current, {
+            left: offsetLeftTarget
+          }],
+          [backgroundDotRef.current, {
+            width: clientWidthTarget,
+          }],
+        ], {duration, ease})
+      })
+    } else { //forward
+      queueAnimations.current.add(async () => {
+        if (backgroundDotRef.current === null || currentDotRef.current === null) return;
+
+        await animate([
+          [backgroundDotRef.current, {
+            width: offsetLeftTarget - backgroundDotRef.current.offsetLeft + clientWidthTarget,
+          }],
+          [currentDotRef.current, {
+            left: offsetLeftTarget
+          }],
+          [backgroundDotRef.current, {
+            width: clientWidthTarget,
+            left: offsetLeftTarget,
+          }],
+        ], {duration, ease})
+      })
     }
-
-    backgroundDotRef.current.offsetLeftTemp = offsetLeftTarget
-    isPlayingAnimation.current = false;
   }
 
-  const dots = useMemo(() => {
+  const dots = () => {
     const dotsArray = [];
 
     for (let i = 0; i < amount; i++) {
@@ -110,15 +112,15 @@ const Bullets = ({
     }
 
     return dotsArray;
-  }, [amount, startBulletIndex])
-
-  // console.log("current bullet: ", currentBulletIndex)
+  }
 
   return (
     <div ref={scope} className={["flex flex-row gap-x-2 overflow-x-hidden relative", className].join(" ")}  {...props}>
-      <div ref={backgroundDotRef} className="h2 h-2 rounded-[10px] bg-darkest-gray absolute"></div>
-      <div ref={currentDotRef} className="min-w-2 min-h-2  w-2 h-2 rounded-[100%] bg-dark-gray absolute"></div>
-      {dots}
+      <div ref={backgroundDotRef}
+           className="w-2 h-2 rounded-[10px] bg-darkest-gray absolute pointer-events-none"></div>
+      <div ref={currentDotRef}
+           className="min-w-2 min-h-2  w-2 h-2 rounded-[100%] bg-dark-gray absolute pointer-events-none"></div>
+      {dots()}
     </div>
   );
 };
