@@ -1,6 +1,6 @@
 "use client";
 
-import React, {MouseEvent, useEffect, useRef, useState} from 'react';
+import React, {memo, MouseEvent, useCallback, useEffect, useRef, useState} from 'react';
 import {useAnimate} from "framer-motion";
 import {ISequentialTaskQueue, SequentialTaskQueue} from "@/utils/SequentialTaskQueue";
 
@@ -10,23 +10,19 @@ interface BulletsProps extends React.HTMLAttributes<HTMLDivElement> {
   onChangeBullet?: (number: number) => void,
 }
 
-interface HTMLDivElementWithOffsetState extends HTMLDivElement {
-  offsetLeftTemp: number,
-}
-
-const Bullets = ({
+const Bullets = memo(function Bullets ({
                    amount = 1,
                    startBulletIndex = 0,
                    className,
                    onChangeBullet,
                    ...props
                  }: BulletsProps
-): React.JSX.Element => {
+): React.JSX.Element {
   if (amount <= 0) throw new Error('amount must be a positive number');
   if (startBulletIndex < 0) throw new Error('currentBulletIndex must be greater than or equal to zero');
   if (startBulletIndex > amount - 1) throw new Error('currentBulletIndex must be in the range');
 
-  const backgroundDotRef = useRef<HTMLDivElementWithOffsetState>(null)
+  const backgroundDotRef = useRef<HTMLDivElement>(null)
   const currentDotRef = useRef<HTMLDivElement>(null)
   const queueAnimations = useRef<ISequentialTaskQueue>(new SequentialTaskQueue())
   const [scope, animate] = useAnimate()
@@ -35,17 +31,6 @@ const Bullets = ({
 
   const widthBlock = 8
   const gap = 8
-
-  useEffect(() => {
-    const startOffset = widthBlock * startBulletIndex + gap * startBulletIndex;
-
-    addAnimationQueue({offsetLeft: startOffset, clientWidth: 8})
-
-    if (currentBulletIndex !== startBulletIndex) {
-      setCurrentBulletIndex(startBulletIndex)
-    }
-
-  }, [startBulletIndex])
 
   async function handleClickDot(e: MouseEvent<HTMLDivElement>) {
     const bulletIndex = Number(e.currentTarget.attributes["0"].value)
@@ -57,7 +42,7 @@ const Bullets = ({
     addAnimationQueue(e.currentTarget)
   }
 
-  function addAnimationQueue(target: { offsetLeft: number, clientWidth: number }) {
+  const addAnimationQueue = useCallback(function addAnimationQueue(target: { offsetLeft: number, clientWidth: number }) {
     if (backgroundDotRef.current === null || currentDotRef.current === null) return;
 
     const {offsetLeft: offsetLeftTarget, clientWidth: clientWidthTarget} = target
@@ -68,6 +53,7 @@ const Bullets = ({
 
     // backward
     if (((currentBulletIndex + 1) * widthBlock + gap * currentBulletIndex) >= offsetLeftTarget) {
+      console.log('backward: ', new Date().getMilliseconds(), " current index: ", currentBulletIndex)
       queueAnimations.current.add(async () => {
         if (backgroundDotRef.current === null || currentDotRef.current === null) return;
 
@@ -85,6 +71,7 @@ const Bullets = ({
         ], {duration, ease})
       })
     } else { //forward
+      console.log('forward', new Date().getMilliseconds(), " current index: ", currentBulletIndex)
       queueAnimations.current.add(async () => {
         if (backgroundDotRef.current === null || currentDotRef.current === null) return;
 
@@ -102,7 +89,7 @@ const Bullets = ({
         ], {duration, ease})
       })
     }
-  }
+  }, [currentBulletIndex, animate, widthBlock, gap])
 
   const dots = () => {
     const dotsArray = [];
@@ -114,6 +101,18 @@ const Bullets = ({
     return dotsArray;
   }
 
+  useEffect(() => {
+    console.log('effect', new Date().getMilliseconds())
+    const startOffset = widthBlock * startBulletIndex + gap * startBulletIndex;
+
+    addAnimationQueue({offsetLeft: startOffset, clientWidth: 8})
+
+    if (currentBulletIndex !== startBulletIndex) {
+      setCurrentBulletIndex(startBulletIndex)
+    }
+
+  }, [startBulletIndex, addAnimationQueue, currentBulletIndex])
+
   return (
     <div ref={scope} className={["flex flex-row gap-x-2 overflow-x-hidden relative", className].join(" ")}  {...props}>
       <div ref={backgroundDotRef}
@@ -123,6 +122,6 @@ const Bullets = ({
       {dots()}
     </div>
   );
-};
+});
 
 export default Bullets;

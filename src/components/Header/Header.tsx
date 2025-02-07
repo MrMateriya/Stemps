@@ -36,7 +36,7 @@ const Header = ({...props}) : ReactElement => {
                 </div>
                 <div className="lg:flex lg:justify-between lg:items-center">
                     <ul className="hidden lg:flex space-x-6">
-                        {links.map((item, index) => (
+                        {links.map((item) => (
                           <li key={item.id}>
                               <Link className="text-bl2 desktop:tracking-[0.5px]" href={item.href}>
                                   {item.title}

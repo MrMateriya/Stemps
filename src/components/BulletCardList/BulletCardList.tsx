@@ -1,6 +1,6 @@
 "use client"
 
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {Card} from "@/UI/types";
 import {Bullets, CardList} from "@/UI";
 
@@ -106,14 +106,14 @@ const BulletCardList = ({ classNames }: BulletCardListProps): React.JSX.Element 
     },
   ]
 
-  function handleChangeBullet(index: number) : void {
+  const handleChangeBullet = useCallback(function handleChangeBullet(index: number) : void {
     console.log("handleCLickBullet: index dot", index)
     setCurrentSlideIndex(index)
-  }
-  function onChangeCard(index: number) : void {
+  }, [])
+  const onChangeCard = useCallback(function onChangeCard(index: number) : void {
     console.log("onChangeCard: index slide", index)
     setCurrentSlideIndex(index)
-  }
+  }, [])
 
   return (
     <div>

@@ -7,7 +7,7 @@ interface ISequentialTaskQueue {
 }
 
 class SequentialTaskQueue implements ISequentialTaskQueue {
-  private queue: Array<any>
+  private queue: Array<() => Promise<void>>
   private isRunning: boolean;
 
   constructor() {
@@ -48,7 +48,7 @@ class SequentialTaskQueue implements ISequentialTaskQueue {
     }
 
     this.isRunning = true; // Устанавливаем флаг выполнения
-    const nextTask: task = this.queue.shift(); // Извлекаем следующую задачу из очереди
+    const nextTask: task = this.queue.shift()!; // Извлекаем следующую задачу из очереди
 
     // Выполняем задачу и после её завершения запускаем следующую
     nextTask()

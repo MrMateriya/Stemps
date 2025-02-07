@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
+import React, {memo, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {Card} from "@/UI/types";
 import {animate} from "framer-motion";
 import {Icon} from "@/UI";
@@ -12,15 +12,15 @@ interface CardListProps extends React.HTMLAttributes<HTMLDivElement> {
   onChangeCard?: (index: number) => void,
 }
 
-const CardList = ({
+const CardList = memo(function CardList({
                     cards, startCardIndex = 0, className, onChangeCard,
                     ...props
-                  }: CardListProps): React.JSX.Element => {
+                  }: CardListProps): React.JSX.Element {
   const list = useRef<HTMLDivElement>(null)
-  let isPlayingAnimation = useRef<boolean>(false)
+  const isPlayingAnimation = useRef<boolean>(false)
   const { width: windowWidth } = useWindowSize()
 
-  let gap = 16;
+  const gap = 16;
   const [widthCard, setWidthCard ] = useState<number>(358)
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
@@ -29,7 +29,7 @@ const CardList = ({
   let startScrollLeft: number = 0;
   let startX: number;
   let difference: number = 0;
-  let scrollSpeed: number = 0.5;
+  const scrollSpeed: number = 0.5;
   let isScrolling = false;
 
   function handleScrolling(e: React.TouchEvent | React.MouseEvent) {
@@ -110,16 +110,16 @@ const CardList = ({
     }
   }
 
-  function calculateScrollLeft(slideIndex: number) {
+  const calculateScrollLeft = useCallback(function calculateScrollLeft(slideIndex: number) {
     if (!list.current) return 0;
     if (!cards[slideIndex]) {
      throw new Error(`currentSlideIndex must be in the range i: ${slideIndex}`);
     }
 
     return (widthCard * slideIndex + gap * slideIndex);
-  }
+  }, [cards, widthCard, gap])
 
-  function Animating(index: number) {
+  const Animating = useCallback(function Animating(index: number) {
     if (!list.current) return;
     isPlayingAnimation.current = true
 
@@ -141,7 +141,7 @@ const CardList = ({
         isPlayingAnimation.current = false
       },
     })
-  }
+  }, [calculateScrollLeft])
 
   useEffect(() => {
     const controls = Animating(startCardIndex)
@@ -150,14 +150,16 @@ const CardList = ({
     }
 
     return () => controls?.stop()
-  }, [startCardIndex]);
+  }, [Animating, startCardIndex, currentCardIndex]);
 
   useLayoutEffect(() => {
     if (!windowWidth) return;
     if (windowWidth >= Number(process.env.NEXT_PUBLIC_SCREEN_LG)) {
       setWidthCard(412)
-    } else {
+    } else if (windowWidth >= Number(process.env.NEXT_PUBLIC_SCREEN_MOBILE)) {
       setWidthCard(358)
+    } else {
+      setWidthCard(list.current?.clientWidth || 358)
     }
   }, [windowWidth]);
 
@@ -173,10 +175,14 @@ const CardList = ({
          onMouseDown={handleScrollingStart}
          className={["flex overflow-x-hidden space-x-4 select-none", className].join(" ")}
          {...props}>
-      {cards.map((card, index) => {
+      {cards.map((card) => {
         return (
           <div key={card.id}
-               className={["relative flex flex-col justify-between p-4 bg-light-gray rounded-lg min-h-[212px] min-w-fit mobile:min-w-[358px] mobile:flex-grow lg:p-6 lg:min-w-[412px] lg:min-h-[256px]", card.classNames?.card].join(" ")}>
+               className={[`overflow-hidden relative flex flex-grow flex-col justify-between p-4 bg-light-gray rounded-lg min-h-[212px] mobile:min-w-[358px] lg:p-6 lg:min-w-[412px] lg:min-h-[256px]`, card.classNames?.card].join(" ")}
+               style={{
+                 minWidth: widthCard,
+               }}
+          >
             <div className={["flex items-center justify-start gap-6 lg:flex-col lg:items-start lg:justify-between lg:h-full", card.classNames?.cardInner].join(" ")}>
               <Icon key={card.icon.iconName}
                     className={["flex-shrink-0 lg:w-20 lg:h-20", card.classNames?.icon].join(" ")}
@@ -195,6 +201,6 @@ const CardList = ({
       })}
     </div>
   );
-};
+});
 
 export default CardList;
