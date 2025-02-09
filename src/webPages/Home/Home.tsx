@@ -1,7 +1,9 @@
-import React from 'react';
-import BulletCardList from "@/components/BulletCardList/BulletCardList";
+import React, {ComponentPropsWithoutRef, JSX} from 'react';
+import {BulletCardList} from "@/components";
 
-const Home = ({...props}) : React.JSX.Element => {
+type THomeProps = ComponentPropsWithoutRef<"div">
+
+const Home = ({...props}: THomeProps): JSX.Element => {
     return (
       <main className="app-container" {...props}>
           <div className="mt-[7px] mb-10 lg:grid grid-cols-[428px_1fr] lg:border-b-[1px] lg:border-solid lg:border-middle-gray lg:m-0 lg:mb-5 lg:py-3 lg:pb-[11px]">

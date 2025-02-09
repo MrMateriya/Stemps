@@ -16,7 +16,7 @@ export type IconParams = {
 }
 
 //Card.tsx
-export interface Card {
+export type Card = {
   id: number,
   title: string,
   icon: IconParams,

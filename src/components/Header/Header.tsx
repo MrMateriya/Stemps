@@ -1,9 +1,19 @@
-import React, {ReactElement} from 'react';
+import React, {ComponentPropsWithoutRef, JSX} from 'react';
 import Link from "next/link";
 import {Button, Icon} from "@/UI";
 
-const Header = ({...props}) : ReactElement => {
-    const links = [
+type THeaderProps = ComponentPropsWithoutRef<"div">
+
+type TLink = {
+    id: number,
+    title: string,
+    href: string,
+}
+
+const Header = ({
+                    ...props
+}: THeaderProps): JSX.Element => {
+    const links: TLink[] = [
         {
             id: 0,
             title: "О школе",
@@ -36,7 +46,7 @@ const Header = ({...props}) : ReactElement => {
                 </div>
                 <div className="lg:flex lg:justify-between lg:items-center">
                     <ul className="hidden lg:flex space-x-6">
-                        {links.map((item) => (
+                        {links.map((item: TLink): JSX.Element => (
                           <li key={item.id}>
                               <Link className="text-bl2 desktop:tracking-[0.5px]" href={item.href}>
                                   {item.title}

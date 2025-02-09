@@ -1,9 +1,7 @@
-import React from 'react';
+import React, {ComponentPropsWithRef, JSX} from 'react';
 import {IconParams} from "@/UI/types";
 
-interface IconProps extends IconParams, React.SVGProps<SVGSVGElement> {
-
-}
+type TIconProps = ComponentPropsWithRef<"svg"> & IconParams
 
 function Icon({
                 iconName,
@@ -11,7 +9,7 @@ function Icon({
                 height,
                 width,
                 ...props
-              }: IconProps): React.JSX.Element {
+              }: TIconProps): JSX.Element {
   return (
     <svg width={width} height={height} {...props}>
       <use href={`${spriteHref}#${iconName}`}/>

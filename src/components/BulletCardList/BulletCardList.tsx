@@ -1,17 +1,20 @@
 "use client"
 
-import React, {useCallback, useState} from 'react';
+import React, {ComponentPropsWithoutRef, JSX, useCallback, useState} from 'react';
 import {Card} from "@/UI/types";
 import {Bullets, CardList} from "@/UI";
 
-interface BulletCardListProps {
+type TBulletCardListProps = ComponentPropsWithoutRef<"div"> & {
   classNames?: {
     bullets?: string,
     cardList?: string,
   }
 }
 
-const BulletCardList = ({ classNames }: BulletCardListProps): React.JSX.Element => {
+const BulletCardList= ({
+                                          classNames,
+                                          ...props
+}: TBulletCardListProps): JSX.Element => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(3);
 
   const cards : Card[] = [
@@ -106,17 +109,17 @@ const BulletCardList = ({ classNames }: BulletCardListProps): React.JSX.Element 
     },
   ]
 
-  const handleChangeBullet = useCallback(function handleChangeBullet(index: number) : void {
+  const handleChangeBullet = useCallback(function handleChangeBullet(index: number): void {
     console.log("handleCLickBullet: index dot", index)
     setCurrentSlideIndex(index)
   }, [])
-  const onChangeCard = useCallback(function onChangeCard(index: number) : void {
+  const onChangeCard = useCallback(function onChangeCard(index: number): void {
     console.log("onChangeCard: index slide", index)
     setCurrentSlideIndex(index)
   }, [])
 
   return (
-    <div>
+    <div {...props}>
       <Bullets className={classNames?.bullets} onChangeBullet={handleChangeBullet} amount={cards.length} startBulletIndex={currentSlideIndex}/>
       <CardList className={classNames?.cardList} cards={cards} onChangeCard={onChangeCard} startCardIndex={currentSlideIndex}/>
     </div>

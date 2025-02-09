@@ -1,14 +1,17 @@
-import React from 'react';
+import React, {ComponentPropsWithoutRef, JSX} from 'react';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type TButtonProps = ComponentPropsWithoutRef<"button"> & {
     variant?: 'filled' | 'outline',
 }
 
 const Button = ({
-                    children, variant = 'filled', className, ...props
-}: ButtonProps): React.JSX.Element => {
+                    children,
+                    variant = 'filled',
+                    className,
+                    ...props
+}: TButtonProps): JSX.Element => {
     const defaultButtonClassName = "border rounded flex py-1 px-2 text-base leading-normal-keyword"
-    let ButtonClassName;
+    let ButtonClassName: string;
 
     switch (variant) {
         case 'filled':

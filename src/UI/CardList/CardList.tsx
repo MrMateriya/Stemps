@@ -1,82 +1,96 @@
 "use client";
 
-import React, {memo, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import React, {
+  JSX,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  TouchEvent,
+  MouseEvent,
+  ComponentPropsWithoutRef,
+} from 'react';
 import {Card} from "@/UI/types";
-import {animate} from "framer-motion";
+import {animate, AnimationPlaybackControls} from "framer-motion";
 import {Icon} from "@/UI";
 import {useWindowSize} from "@/hooks/useWindowSize";
 
-interface CardListProps extends React.HTMLAttributes<HTMLDivElement> {
+type TCardListProps = ComponentPropsWithoutRef<"div"> & {
   cards: Card[],
   startCardIndex?: number,
   onChangeCard?: (index: number) => void,
 }
 
 const CardList = memo(function CardList({
-                    cards, startCardIndex = 0, className, onChangeCard,
+                    cards,
+                    startCardIndex = 0,
+                    className,
+                    onChangeCard,
                     ...props
-                  }: CardListProps): React.JSX.Element {
+                  }: TCardListProps): JSX.Element {
   const list = useRef<HTMLDivElement>(null)
   const isPlayingAnimation = useRef<boolean>(false)
   const { width: windowWidth } = useWindowSize()
 
   const gap = 16;
-  const [widthCard, setWidthCard ] = useState<number>(358)
+  const [widthCard, setWidthCard] = useState<number>(358)
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
-  const alignmentCardThreshold: number = widthCard / 2;
+  const alignmentCardThreshold = widthCard / 2;
 
-  let startScrollLeft: number = 0;
+  let startScrollLeft = 0;
   let startX: number;
-  let difference: number = 0;
-  const scrollSpeed: number = 0.5;
+  let difference = 0;
+  const scrollSpeed = 0.5;
   let isScrolling = false;
 
-  function handleScrolling(e: React.TouchEvent | React.MouseEvent) {
+  function handleScrolling(e: TouchEvent | MouseEvent): void {
     if (!list.current || !isScrolling || isPlayingAnimation.current) return;
 
     if (e.type === 'touchmove') {
-      difference = (e as React.TouchEvent).changedTouches[0].clientX - startX;
+      difference = (e as TouchEvent).changedTouches[0].clientX - startX;
     } else if (e.type === 'mousemove') {
       e.preventDefault()
-      difference = (e as React.MouseEvent).clientX - startX;
+      difference = (e as MouseEvent).clientX - startX;
     }
     list.current.scrollLeft = startScrollLeft - (difference * scrollSpeed);
   }
 
-  function handleScrollingStart(e: React.TouchEvent | React.MouseEvent) {
+  function handleScrollingStart(e: TouchEvent | MouseEvent): void {
     if (!list.current || isPlayingAnimation.current) return;
 
     isScrolling = true;
     if (e.type === 'touchstart') {
-      startX = (e as React.TouchEvent).changedTouches[0].clientX;
+      startX = (e as TouchEvent).changedTouches[0].clientX;
     } else if (e.type === 'mousedown') {
       e.preventDefault()
-      startX = (e as React.MouseEvent).clientX;
+      startX = (e as MouseEvent).clientX;
     }
     startScrollLeft = list.current.scrollLeft;
   }
 
-  function handleScrollingEnd(e: React.MouseEvent | React.TouchEvent) {
+  function handleScrollingEnd(e: MouseEvent | TouchEvent): void {
     if (!list.current || !isScrolling || isPlayingAnimation.current) return;
     isScrolling = false;
 
     const fullScrollLeft = list.current.scrollWidth - list.current.clientWidth
-    const cardsOffsetLeft = []
+    const cardsOffsetLeft: number[] = []
 
     if (e.currentTarget.scrollLeft === fullScrollLeft) {
       if (cards.length === 0) {
         if (onChangeCard) onChangeCard(0)
-        Animating(0)
+        animating(0)
         setCurrentCardIndex(0)
         return;
       }
       if (currentCardIndex === cards.length - 1) {
-        Animating(cards.length - 1)
+        animating(cards.length - 1)
         return;
       }
       if (onChangeCard) onChangeCard(cards.length - 1);
-      Animating(cards.length - 1)
+      animating(cards.length - 1)
       setCurrentCardIndex(cards.length - 1)
       return;
     }
@@ -92,34 +106,34 @@ const CardList = memo(function CardList({
     for (let i = 0; i < cardsOffsetLeft.length; i++) {
       if (e.currentTarget.scrollLeft >= cardsOffsetLeft[i] && e.currentTarget.scrollLeft < cardsOffsetLeft[i+1] && cardsOffsetLeft[i+1]) {
         if (currentCardIndex === i) {
-          Animating(i)
+          animating(i)
           return;
         }
         if (onChangeCard) onChangeCard(i);
-        Animating(i)
+        animating(i)
         setCurrentCardIndex(i)
       } else if (e.currentTarget.scrollLeft > cardsOffsetLeft[i] && i === cardsOffsetLeft.length - 1) {
         if (currentCardIndex === i) {
-          Animating(i)
+          animating(i)
           return;
         }
         if (onChangeCard) onChangeCard(i);
-        Animating(i)
+        animating(i)
         setCurrentCardIndex(i)
       }
     }
   }
 
-  const calculateScrollLeft = useCallback(function calculateScrollLeft(slideIndex: number) {
+  const calculateScrollLeft = useCallback(function calculateScrollLeft(slideIndex: number): number {
     if (!list.current) return 0;
     if (!cards[slideIndex]) {
-     throw new Error(`currentSlideIndex must be in the range i: ${slideIndex}`);
+     throw new Error(`currentSlideIndex must be in the range, i: ${slideIndex}`);
     }
 
     return (widthCard * slideIndex + gap * slideIndex);
   }, [cards, widthCard, gap])
 
-  const Animating = useCallback(function Animating(index: number) {
+  const animating = useCallback(function Animating(index: number): AnimationPlaybackControls | undefined {
     if (!list.current) return;
     isPlayingAnimation.current = true
 
@@ -133,7 +147,7 @@ const CardList = memo(function CardList({
     return animate(list.current.scrollLeft, toScrollLeft, {
       ease: "easeInOut",
       duration: 1,
-      onUpdate: (latest: number) => {
+      onUpdate: (latest): void => {
         if (!list.current) return;
         list.current.scrollLeft = latest;
       },
@@ -144,22 +158,23 @@ const CardList = memo(function CardList({
   }, [calculateScrollLeft])
 
   useEffect(() => {
-    const controls = Animating(startCardIndex)
+    const controls = animating(startCardIndex)
     if (currentCardIndex !== startCardIndex) {
       setCurrentCardIndex(startCardIndex)
     }
 
     return () => controls?.stop()
-  }, [Animating, startCardIndex, currentCardIndex]);
+  }, [animating, startCardIndex, currentCardIndex]);
 
   useLayoutEffect(() => {
     if (!windowWidth) return;
+    if (!list.current) return;
     if (windowWidth >= Number(process.env.NEXT_PUBLIC_SCREEN_LG)) {
       setWidthCard(412)
-    } else if (windowWidth >= Number(process.env.NEXT_PUBLIC_SCREEN_MOBILE)) {
+    } else if (windowWidth >= 410) {
       setWidthCard(358)
     } else {
-      setWidthCard(list.current?.clientWidth || 358)
+      setWidthCard(list.current.clientWidth)
     }
   }, [windowWidth]);
 
@@ -175,14 +190,13 @@ const CardList = memo(function CardList({
          onMouseDown={handleScrollingStart}
          className={["flex overflow-x-hidden space-x-4 select-none", className].join(" ")}
          {...props}>
-      {cards.map((card) => {
+      {cards.map((card: Card): JSX.Element => {
         return (
           <div key={card.id}
                className={[`overflow-hidden relative flex flex-grow flex-col justify-between p-4 bg-light-gray rounded-lg min-h-[212px] mobile:min-w-[358px] lg:p-6 lg:min-w-[412px] lg:min-h-[256px]`, card.classNames?.card].join(" ")}
                style={{
                  minWidth: widthCard,
-               }}
-          >
+               }}>
             <div className={["flex items-center justify-start gap-6 lg:flex-col lg:items-start lg:justify-between lg:h-full", card.classNames?.cardInner].join(" ")}>
               <Icon key={card.icon.iconName}
                     className={["flex-shrink-0 lg:w-20 lg:h-20", card.classNames?.icon].join(" ")}
@@ -190,7 +204,7 @@ const CardList = memo(function CardList({
                     iconName={card.icon.iconName}
                     width={card.icon.iconWidth}
                     height={card.icon.iconHeight}/>
-              <p className={["text-2xl text-bl2 w-fit leading-7 lg:text-[32px]", card.classNames?.title].join(" ")}>
+              <p className={["text-xl mobile:text-2xl text-bl2 w-fit leading-7 lg:text-[32px]", card.classNames?.title].join(" ")}>
                 {card.title}
               </p>
             </div>

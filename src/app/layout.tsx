@@ -1,6 +1,6 @@
 import type {Metadata, Viewport} from "next";
 import "./globals.css";
-import React from "react";
+import React, {JSX} from "react";
 import localFont from 'next/font/local';
 import {Header} from "@/components";
 
@@ -55,7 +55,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>): JSX.Element {
   return (
     <html lang="ru">
       <body className={`${PPNeueMontreal.variable} font-montreal font-normal`}>
