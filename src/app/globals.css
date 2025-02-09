@@ -14,6 +14,15 @@
   box-sizing: border-box;
 }
 
+html {
+  min-height: 100%;
+}
+body {
+  min-height: 100vh;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+
 /* Links */
 
 a, a:link, a:visited  {

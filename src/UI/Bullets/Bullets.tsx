@@ -63,7 +63,6 @@ const Bullets = memo(function Bullets ({
 
     // backward
     if (((currentBulletIndex + 1) * widthBlock + gap * currentBulletIndex) >= offsetLeftTarget) {
-      // console.log('backward: ', new Date().getMilliseconds(), " current index: ", currentBulletIndex)
       queueAnimations.current.add(async () => {
         if (backgroundDotRef.current === null || currentDotRef.current === null) return;
 
@@ -81,7 +80,6 @@ const Bullets = memo(function Bullets ({
         ], {duration, ease})
       })
     } else { //forward
-      // console.log('forward', new Date().getMilliseconds(), " current index: ", currentBulletIndex)
       queueAnimations.current.add(async () => {
         if (backgroundDotRef.current === null || currentDotRef.current === null) return;
 
@@ -112,7 +110,6 @@ const Bullets = memo(function Bullets ({
   }
 
   useEffect(() => {
-    // console.log('effect', new Date().getMilliseconds())
     const startOffset = widthBlock * startBulletIndex + gap * startBulletIndex;
 
     addAnimationQueue({offsetLeft: startOffset, clientWidth: 8})

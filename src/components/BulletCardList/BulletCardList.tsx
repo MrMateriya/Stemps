@@ -110,11 +110,9 @@ const BulletCardList= ({
   ]
 
   const handleChangeBullet = useCallback(function handleChangeBullet(index: number): void {
-    console.log("handleCLickBullet: index dot", index)
     setCurrentSlideIndex(index)
   }, [])
   const onChangeCard = useCallback(function onChangeCard(index: number): void {
-    console.log("onChangeCard: index slide", index)
     setCurrentSlideIndex(index)
   }, [])
 
